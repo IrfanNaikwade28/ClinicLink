@@ -8,7 +8,6 @@ const generateToken = (user) => {
   });
 };
 
-// Register (Patient or Doctor)
 exports.registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
 
