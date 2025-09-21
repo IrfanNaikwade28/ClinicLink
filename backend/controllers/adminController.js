@@ -289,6 +289,35 @@ const allReports = async (req, res) => {
   }
 };
 
+// API to get report by id for admin
+const getReportByIdAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const report = await reportModel.findById(id)
+      .populate('doctorId', 'name image speciality degree')
+      .populate('patientId', 'name email phone dob gender address')
+      .populate('appointmentId');
+    
+    if (!report) return res.json({ success: false, message: "Report not found" });
+    
+    // Get additional appointment details if populated
+    let appointmentData = null;
+    if (report.appointmentId) {
+      appointmentData = await appointmentModel.findById(report.appointmentId);
+    }
+    
+    return res.json({ 
+      success: true, 
+      report,
+      appointmentData,
+      patientData: report.patientId,
+      doctorData: report.doctorId
+    });
+  } catch (error) {
+    return res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   addDoctor,
   loginAdmin,
@@ -300,4 +329,5 @@ export {
   deleteUser,
   deleteDoctor,
   allReports,
+  getReportByIdAdmin,
 };

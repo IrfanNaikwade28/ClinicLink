@@ -6,7 +6,7 @@ import HospitalReportTemplate from '../../components/HospitalReportTemplate';
 import { generateUnifiedMedicalReportPDF } from '../../utils/pdfGenerator';
 
 const AllReports = () => {
-  const { aToken } = useContext(AdminContext);
+  const { aToken, logoutAdmin } = useContext(AdminContext);
   const [reports, setReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
   const [reportDetails, setReportDetails] = useState(null);
@@ -26,14 +26,37 @@ const AllReports = () => {
   const loadReports = async () => {
     try {
       setLoading(true);
+      
+      // Check if admin token exists
+      if (!aToken) {
+        toast.error('Please login as admin to access reports');
+        return;
+      }
+      
       const { data } = await fetchAllReports();
       if (data.success) {
         setReports(data.reports || []);
       } else {
-        toast.error(data.message);
+        console.error('Reports fetch failed:', data.message);
+        // If authentication failed, redirect to login
+        if (data.message === "Not Authorized Login Again") {
+          toast.error('Session expired. Please login again.');
+          logoutAdmin();
+          window.location.href = '/';
+        } else {
+          toast.error(data.message);
+        }
       }
     } catch (e) {
-      toast.error(e.message);
+      console.error('Reports fetch error:', e);
+      // Check if it's an authentication error
+      if (e.response?.status === 401 || e.response?.data?.message === "Not Authorized Login Again") {
+        toast.error('Session expired. Please login again.');
+        logoutAdmin();
+        window.location.href = '/';
+      } else {
+        toast.error(e.response?.data?.message || e.message || 'Failed to load reports');
+      }
     } finally {
       setLoading(false);
     }
@@ -112,6 +135,7 @@ const AllReports = () => {
     <div className="w-full max-w-7xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">All Medical Reports</h1>
+        
         <div className="flex items-center space-x-4">
           <div className="relative">
             <input

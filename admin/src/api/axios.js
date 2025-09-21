@@ -26,6 +26,12 @@ const api = axios.create({ baseURL });
 api.interceptors.request.use((config) => {
   const atoken = localStorage.getItem('atoken');
   const dtoken = localStorage.getItem('dtoken');
+  
+  // Debug logging
+  console.log('API Request to:', config.url);
+  console.log('Admin token exists:', !!atoken);
+  console.log('Doctor token exists:', !!dtoken);
+  
   if (atoken) config.headers['atoken'] = atoken;
   if (dtoken) config.headers['dtoken'] = dtoken;
   return config;

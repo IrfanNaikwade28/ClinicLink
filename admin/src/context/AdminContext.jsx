@@ -18,6 +18,13 @@ const AdminContextProvider = (props) => {
   const [aToken, setAToken] = useState(
     localStorage.getItem("atoken") ? localStorage.getItem("atoken") : ""
   );
+  
+  // Admin logout function
+  const logoutAdmin = () => {
+    setAToken("");
+    localStorage.removeItem("atoken");
+    localStorage.removeItem("dtoken"); // Clear doctor token too for safety
+  };
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [dashData, setDashData] = useState(false);
@@ -143,6 +150,7 @@ const AdminContextProvider = (props) => {
   const value = {
     aToken,
     setAToken,
+    logoutAdmin,
     backendUrl,
     doctors,
     getAllDoctors,
