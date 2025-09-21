@@ -3,6 +3,7 @@
 A comprehensive healthcare management system that connects patients, doctors, and administrators through a seamless digital platform.
 
 ## Demo Video
+https://github.com/user-attachments/assets/696ad933-9375-40bb-9ea1-08f0fc51d88e
 
 
 ## 🌟 Overview
