@@ -11,16 +11,12 @@ const Doctors = () => {
 
   const { doctors } = useContext(AppContext);
 
-  const applyFilter = () => {
+  useEffect(() => {
     if (speciality) {
       setFilterDoc(doctors.filter((doc) => doc.speciality === speciality));
     } else {
       setFilterDoc(doctors);
     }
-  };
-
-  useEffect(() => {
-    applyFilter();
   }, [doctors, speciality]);
 
   return (
@@ -124,7 +120,9 @@ const Doctors = () => {
               className="border border-blue-200 rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500"
               key={index}
             >
-              <img className="bg-blue-50" src={item.image} alt="" />
+              <div className="bg-blue-50 w-full h-56 overflow-hidden">
+                <img className="w-full h-full object-cover" src={item.image} alt="" />
+              </div>
               <div className="p-4">
                 <div
                   className={`flex items-center gap-2 text-sm text-center ${

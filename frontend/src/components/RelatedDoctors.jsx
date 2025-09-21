@@ -1,6 +1,7 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 
 const RelatedDoctors = ({ speciality, docId }) => {
   const { doctors } = useContext(AppContext);
@@ -33,7 +34,9 @@ const RelatedDoctors = ({ speciality, docId }) => {
             className="border border-blue-200 rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500"
             key={index}
           >
-            <img className="bg-blue-50" src={item.image} alt="" />
+            <div className="bg-blue-50 w-full h-56 overflow-hidden">
+              <img className="w-full h-full object-cover" src={item.image} alt="" />
+            </div>
             <div className="p-4">
               <div
                 className={`flex items-center gap-2 text-sm text-center ${
@@ -67,3 +70,8 @@ const RelatedDoctors = ({ speciality, docId }) => {
 };
 
 export default RelatedDoctors;
+
+RelatedDoctors.propTypes = {
+  speciality: PropTypes.string,
+  docId: PropTypes.string,
+};

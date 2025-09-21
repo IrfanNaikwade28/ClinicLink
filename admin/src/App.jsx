@@ -10,10 +10,12 @@ import Dashboard from "./pages/Admin/Dashboard";
 import AllAppointments from "./pages/Admin/AllAppointments";
 import AddDoctor from "./pages/Admin/AddDoctor";
 import DoctorsList from "./pages/Admin/DoctorsList";
+import PatientsList from "./pages/Admin/PatientsList";
 import { DoctorContext } from "./context/DoctorContext";
 import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
 import DoctorAppointments from "./pages/Doctor/DoctorAppointments";
 import DoctorProfile from "./pages/Doctor/DoctorProfile";
+import ReportEditor from "./pages/Doctor/ReportEditor";
 
 const App = () => {
   const { aToken } = useContext(AdminContext);
@@ -42,11 +44,13 @@ const App = () => {
           <Route path="/all-appointments" element={<AllAppointments />} />
           <Route path="/add-doctor" element={<AddDoctor />} />
           <Route path="/doctor-list" element={<DoctorsList />} />
+          <Route path="/patients" element={<PatientsList />} />
 
           {/* Doctor Route */}
           <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
           <Route path="/doctor-appointments" element={<DoctorAppointments />} />
           <Route path="/doctor-profile" element={<DoctorProfile />} />
+          <Route path="/doctor-report" element={<ReportEditor />} />
         </Routes>
       </div>
     </div>

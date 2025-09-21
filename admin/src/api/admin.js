@@ -9,8 +9,15 @@ export const toggleDoctorAvailability = (docId) => api.post('/api/admin/change-a
 export const addDoctor = (formData) => api.post('/api/admin/add-doctor', formData, { headers: { 'Content-Type': 'multipart/form-data' }});
 
 // Appointments
-export const fetchAllAppointments = () => api.get('/api/admin/appointments');
+export const fetchAllAppointments = (search) => api.get(`/api/admin/appointments${search ? `?search=${encodeURIComponent(search)}` : ''}`);
 export const cancelAdminAppointment = (appointmentId) => api.post('/api/admin/cancel-appointment', { appointmentId });
 
 // Dashboard
 export const fetchAdminDashboard = () => api.get('/api/admin/dashboard');
+
+// Users
+export const listUsers = () => api.get('/api/admin/users');
+export const deleteUser = (userId) => api.delete(`/api/admin/users/${userId}`);
+
+// Delete Doctor
+export const deleteDoctor = (doctorId) => api.delete(`/api/admin/doctor/${doctorId}`);

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { assets } from "../../assets/assets";
 import { AdminContext } from "../../context/AdminContext";
 import { toast } from "react-toastify";
@@ -16,17 +16,32 @@ const AddDoctor = () => {
   const [degree, SetDegree] = useState("");
   const [address1, SetAddress1] = useState("");
   const [address2, SetAddress2] = useState("");
-
+  const [addDoc, SetAddDoc] = useState(false);
   const { backendUrl, aToken } = useContext(AdminContext);
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
+    // Prevent double submit
+    if (addDoc) return;
+
+    // Basic client-side validations BEFORE enabling loading state
+    if (!docImg) {
+      toast.error("Image Not Selected");
+      return;
+    }
+    if (!name || !email || !password || !degree || !address1 || !address2) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+    const feeNumber = Number(fees);
+    if (!Number.isFinite(feeNumber) || feeNumber <= 0) {
+      toast.error("Please enter a valid positive fee");
+      return;
+    }
+
+    SetAddDoc(true);
 
     try {
-      if (!docImg) {
-        return toast.error("Image Not Selected");
-      }
-
       const formData = new FormData();
 
       formData.append("image", docImg);
@@ -65,12 +80,16 @@ const AddDoctor = () => {
         SetDegree("");
         SetAddress1("");
         SetAddress2("");
+
       } else {
         toast.error(data.message);
+
       }
     } catch (error) {
       toast.error(error.message);
       console.log(error);
+    } finally {
+      SetAddDoc(false);
     }
   };
 
@@ -79,17 +98,21 @@ const AddDoctor = () => {
       <p className="mb-3 text-lg font-medium">Add Doctor</p>
       <div className="bg-white px-8 py-8 border rounded w-full max-w-4xl max-h-[80vh] overflow-y-scroll">
         <div className="flex items-center gap-4 mb-8 text-gray-500">
-          <label htmlFor="doc-img">
-            <img
-              className="w-16 bg-gray-100 rounded-full cursor-pointer"
-              src={docImg ? URL.createObjectURL(docImg) : assets.upload_area}
-              alt=""
-            />
+          <label htmlFor="doc-img" className="block">
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 cursor-pointer flex items-center justify-center">
+              <img
+                className="w-full h-full object-cover"
+                src={docImg ? URL.createObjectURL(docImg) : assets.upload_area}
+                alt=""
+              />
+            </div>
           </label>
           <input
             onChange={(e) => SetDocImg(e.target.files[0])}
             type="file"
             id="doc-img"
+            accept="image/*"
+            disabled={addDoc}
             hidden
           />
           <p>
@@ -107,6 +130,7 @@ const AddDoctor = () => {
                 className="border rounded px-3 py-2"
                 type="text"
                 placeholder="Name"
+                disabled={addDoc}
                 required
               />
             </div>
@@ -119,6 +143,7 @@ const AddDoctor = () => {
                 className="border rounded px-3 py-2"
                 type="email"
                 placeholder="Email"
+                disabled={addDoc}
                 required
               />
             </div>
@@ -131,6 +156,7 @@ const AddDoctor = () => {
                 className="border rounded px-3 py-2"
                 type="password"
                 placeholder="Password"
+                disabled={addDoc}
                 required
               />
             </div>
@@ -143,6 +169,7 @@ const AddDoctor = () => {
                 className="border rounded px-3 py-2"
                 name=""
                 id=""
+                disabled={addDoc}
               >
                 <option value="1 Year">1 Year</option>
                 <option value="2 Year">2 Year</option>
@@ -165,6 +192,7 @@ const AddDoctor = () => {
                 className="border rounded px-3 py-2"
                 type="number"
                 placeholder="fees"
+                disabled={addDoc}
                 required
               />
             </div>
@@ -179,6 +207,7 @@ const AddDoctor = () => {
                 className="border rounded px-3 py-2"
                 name=""
                 id=""
+                disabled={addDoc}
               >
                 <option value="General physician">General physician</option>
                 <option value="Gynecologist">Gynecologist</option>
@@ -197,6 +226,7 @@ const AddDoctor = () => {
                 className="border rounded px-3 py-2"
                 type="text"
                 placeholder="Education"
+                disabled={addDoc}
                 required
               />
             </div>
@@ -209,6 +239,7 @@ const AddDoctor = () => {
                 className="border rounded px-3 py-2"
                 type="text"
                 placeholder="address 1"
+                disabled={addDoc}
                 required
               />
               <input
@@ -217,6 +248,7 @@ const AddDoctor = () => {
                 className="border rounded px-3 py-2"
                 type="text"
                 placeholder="address 2"
+                disabled={addDoc}
                 required
               />
             </div>
@@ -231,15 +263,28 @@ const AddDoctor = () => {
             className="w-full px-4 pt-2 border rounded"
             placeholder="write about doctor"
             rows={5}
+            disabled={addDoc}
             required
           />
         </div>
 
         <button
           type="submit"
-          className="bg-primary px-10 py-3 mt-4 text-white rounded-full"
+          disabled={addDoc}
+          className={`bg-primary px-10 py-3 mt-4 text-white rounded-full ${addDoc ? 'opacity-70 cursor-not-allowed' : ''}`}
+          aria-busy={addDoc}
         >
-          Add doctor
+          {addDoc ? (
+            <span className="inline-flex items-center gap-2">
+              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+              Adding...
+            </span>
+          ) : (
+            'Add doctor'
+          )}
         </button>
       </div>
     </form>

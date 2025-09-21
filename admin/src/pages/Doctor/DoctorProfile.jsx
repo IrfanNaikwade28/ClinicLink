@@ -1,11 +1,11 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { DoctorContext } from "../../context/DoctorContext";
 import { AppContext } from "../../context/AppContext";
-import axios from "axios";
+import { fetchProfile as apiGetProfile, updateProfile as apiUpdateProfile } from "../../api/doctor";
 import { toast } from "react-toastify";
 
 const DoctorProfile = () => {
-  const { dToken, profileData, setProfileData, getProfileData, backendUrl } =
+  const { dToken, profileData, setProfileData } =
     useContext(DoctorContext);
   const { currency } = useContext(AppContext);
 
@@ -19,16 +19,14 @@ const DoctorProfile = () => {
         available: profileData.available,
       };
 
-      const { data } = await axios.post(
-        backendUrl + "/api/doctor/update-profile",
-        updateData,
-        { headers: { dToken } }
-      );
+      const { data } = await apiUpdateProfile(updateData);
 
       if (data.success) {
         toast.success(data.message);
-        setIsEdit(false);
-        getProfileData();
+  setIsEdit(false);
+  // Reload latest profile
+  const resp = await apiGetProfile();
+  if (resp.data?.success) setProfileData(resp.data.profile);
       } else {
         toast.error(data.message);
       }
@@ -39,16 +37,21 @@ const DoctorProfile = () => {
   };
 
   useEffect(() => {
-    getProfileData();
-  }, [dToken]);
+    (async () => {
+      const { data } = await apiGetProfile();
+      if (data.success) {
+        setProfileData(data.profile);
+      }
+    })();
+  }, [dToken, setProfileData]);
 
   return (
     profileData && (
       <div>
         <div className="flex flex-col gap-4 m-5">
-          <div className="flex justify-center items-center size-60 rounded-full overflow-hidden">
+          <div className="flex justify-center items-center size-60 rounded-full overflow-hidden bg-primary/5">
             <img
-              className="bg-primary/80 w-full h-full sm:max-w-64 sm:max-h-64 rounded-lg object-contain"
+              className="w-full h-full object-cover"
               src={profileData.image}
               alt=""
             />

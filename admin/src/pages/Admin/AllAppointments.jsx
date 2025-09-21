@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AdminContext } from "../../context/AdminContext";
 import { AppContext } from "../../context/AppContext";
 import { assets } from "../../assets/assets";
@@ -8,15 +8,24 @@ const AllAppointments = () => {
     useContext(AdminContext);
   const { calculateAge, slotDateFormat, currency } = useContext(AppContext);
 
+  const [search, setSearch] = useState("");
   useEffect(() => {
     if (aToken) {
-      getAllAppointments();
+      getAllAppointments(search.trim());
     }
-  }, [aToken]);
+  }, [aToken, search, getAllAppointments]);
 
   return (
     <div className="w-full max-w-6xl m-5">
-      <p className="mb-3 text-lg font-medium">All Appointments</p>
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <p className="text-lg font-medium">All Appointments</p>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by patient name/email"
+          className="border rounded px-3 py-1 text-sm w-64"
+        />
+      </div>
       <div className="bg-white border rounded text-sm max-h-[80vh] min-h-[60vh] overflow-y-scroll">
         <div className="hidden sm:grid grid-cols-[0.5fr_3fr_1fr_3fr_3fr_1fr_1fr] grid-flow-col py-3 px-6 border-b">
           <p>#</p>

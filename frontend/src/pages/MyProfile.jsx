@@ -1,15 +1,22 @@
-import React, { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
-import axios from "axios";
+import { updateUserProfile } from "../api/auth";
 import { toast } from "react-toastify";
 
 const MyProfile = () => {
-  const { userData, setUserData, token, backendUrl, loadUserProfileData } =
+  const { userData, setUserData, loadUserProfileData, token } =
     useContext(AppContext);
 
   const [isEdit, setIsEdit] = useState(false);
   const [image, setImage] = useState(false);
+
+  useEffect(() => {
+    // Ensure profile is loaded when visiting page directly via URL
+    if (token && !userData) {
+      loadUserProfileData();
+    }
+  }, [token, userData, loadUserProfileData]);
 
   const updateUserProfileData = async () => {
     try {
@@ -23,11 +30,7 @@ const MyProfile = () => {
 
       image && formData.append("image", image);
 
-      const { data } = await axios.post(
-        backendUrl + "/api/user/update-profile",
-        formData,
-        { headers: { token } }
-      );
+      const { data } = await updateUserProfile(formData);
 
       if (data.success) {
         toast.success(data.message);
@@ -43,19 +46,37 @@ const MyProfile = () => {
     }
   };
 
+  if (!token) {
+    return (
+      <div className="max-w-lg">
+        <p className="text-sm text-gray-500">Please login to view your profile.</p>
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <div className="max-w-lg">
+        <div className="w-36 h-36 rounded overflow-hidden bg-gray-200 animate-pulse" />
+        <div className="h-6 bg-gray-200 rounded w-40 mt-4 animate-pulse" />
+        <div className="h-px bg-gray-200 my-4" />
+        <p className="text-sm text-gray-500">Loading profile…</p>
+      </div>
+    );
+  }
+
   return (
-    userData && (
       <div className="max-w-lg flex flex-col gap-2 text-sm">
         {isEdit ? (
           <label htmlFor="image">
-            <div className="inline-block relative cursor-pointer">
+            <div className="inline-block relative cursor-pointer w-36 h-36 rounded overflow-hidden">
               <img
-                className="w-36 rounded opacity-75"
+                className="w-full h-full object-cover opacity-75"
                 src={image ? URL.createObjectURL(image) : userData.image}
                 alt=""
               />
               <img
-                className="w-10 absolute bottom-12 right-12"
+                className="w-10 absolute bottom-3 right-3"
                 src={image ? "" : assets.upload_icon}
                 alt=""
               />
@@ -68,7 +89,9 @@ const MyProfile = () => {
             />
           </label>
         ) : (
-          <img className="w-36 rounded" src={userData.image} alt="" />
+          <div className="w-36 h-36 rounded overflow-hidden">
+            <img className="w-full h-full object-cover" src={userData.image} alt="" />
+          </div>
         )}
 
         {isEdit ? (
@@ -195,7 +218,6 @@ const MyProfile = () => {
           )}
         </div>
       </div>
-    )
   );
 };
 

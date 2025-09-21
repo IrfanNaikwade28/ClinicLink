@@ -2,7 +2,20 @@ import doctorModel from "../models/doctorModel.js";
 import bycrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
+import userModel from "../models/userModel.js";
 
+const formatDisplayName = (raw) => {
+  if (!raw || typeof raw !== "string") return raw;
+  let s = raw.trim();
+  s = s.replace(/[._-]+/g, " ");
+  s = s.replace(/([a-z])([A-Z])/g, "$1 $2");
+  s = s.replace(/\s+/g, " ");
+  s = s
+    .split(" ")
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+    .join(" ");
+  return s;
+};
 const changeAvailability = async (req, res) => {
   try {
     const { docId } = req.body;
@@ -53,7 +66,43 @@ const loginDoctor = async (req, res) => {
 const appointmentsDoctor = async (req, res) => {
   try {
     const { docId } = req.body;
-    const appointments = await appointmentModel.find({ docId });
+    const { search } = req.query;
+  let appointments = await appointmentModel.find({ docId }).lean();
+
+    // Refresh embedded userData with latest profile info
+    const userIds = [...new Set(appointments.map((a) => a.userId))];
+    if (userIds.length) {
+      const users = await userModel
+        .find({ _id: { $in: userIds } })
+        .select("name email image dob")
+        .lean();
+      const uMap = new Map(users.map((u) => [String(u._id), u]));
+      appointments = appointments.map((a) => {
+        const u = uMap.get(String(a.userId));
+        if (u) {
+          const prev = a.userData || {};
+          const emailName = (u.email && String(u.email).split('@')[0]) || '';
+          const profileName = (u.name && String(u.name).trim()) || undefined;
+          a.userData = {
+            ...prev,
+            name: profileName ?? ((prev.name && String(prev.name).trim()) || (emailName && emailName.trim()) || prev.name),
+            email: (u.email && String(u.email).trim()) || prev.email,
+            image: (u.image && String(u.image).trim()) || prev.image,
+            dob: u.dob || prev.dob,
+          };
+        }
+        return a;
+      });
+    }
+
+    if (search && String(search).trim()) {
+      const s = String(search).trim().toLowerCase();
+      appointments = appointments.filter((a) => {
+        const name = (a.userData?.name || "").toLowerCase();
+        const email = (a.userData?.email || "").toLowerCase();
+        return name.includes(s) || email.includes(s);
+      });
+    }
 
     res.json({ success: true, appointments });
   } catch (error) {
@@ -103,29 +152,55 @@ const appointmentCancel = async (req, res) => {
 const doctorDashboard = async (req, res) => {
   try {
     const { docId } = req.body;
-    const appointments = await appointmentModel.find({ docId });
+    // Sort by most recent first
+    let appointments = await appointmentModel
+      .find({ docId })
+      .sort({ date: -1 })
+      .lean();
 
     let earnings = 0;
 
-    appointments.map((item) => {
-      if (item.isCompleted || item.payment) {
-        earnings += item.amount;
-      }
-    });
+    for (const item of appointments) {
+      if (item.isCompleted || item.payment) earnings += item.amount;
+    }
 
     let patients = [];
 
-    appointments.map((item) => {
-      if (!patients.includes(item.userId)) {
-        patients.push(item.userId);
-      }
-    });
+    for (const item of appointments) {
+      if (!patients.includes(item.userId)) patients.push(item.userId);
+    }
+
+    // Refresh embedded userData with latest profile info for latest bookings
+    const top = appointments.slice(0, 5);
+    if (top.length) {
+      const userIds = [...new Set(top.map((a) => a.userId))];
+      const users = await userModel
+        .find({ _id: { $in: userIds } })
+        .select("name email image dob")
+        .lean();
+      const uMap = new Map(users.map((u) => [String(u._id), u]));
+      top.forEach((a) => {
+        const u = uMap.get(String(a.userId));
+        if (u) {
+          const prev = a.userData || {};
+          const emailName = (u.email && String(u.email).split('@')[0]) || '';
+          const profileName = (u.name && String(u.name).trim()) || undefined;
+          a.userData = {
+            ...prev,
+            name: profileName ?? ((prev.name && String(prev.name).trim()) || (emailName && emailName.trim()) || prev.name),
+            email: (u.email && String(u.email).trim()) || prev.email,
+            image: (u.image && String(u.image).trim()) || prev.image,
+            dob: u.dob || prev.dob,
+          };
+        }
+      });
+    }
 
     const dashData = {
       earnings,
       appointments: appointments.length,
       patients: patients.length,
-      latestAppointments: appointments.reverse().slice(0, 5),
+      latestAppointments: top,
     };
 
     res.json({ success: true, dashData });

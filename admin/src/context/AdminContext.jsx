@@ -4,6 +4,9 @@ import {
   fetchAllAppointments,
   cancelAdminAppointment,
   fetchAdminDashboard,
+  listUsers as apiListUsers,
+  deleteUser as apiDeleteUser,
+  deleteDoctor as apiDeleteDoctor,
 } from "../api/admin";
 import { createContext, useState } from "react";
 import PropTypes from "prop-types";
@@ -18,6 +21,7 @@ const AdminContextProvider = (props) => {
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [dashData, setDashData] = useState(false);
+  const [users, setUsers] = useState([]);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL; // still exposed for legacy components
 
@@ -49,9 +53,9 @@ const AdminContextProvider = (props) => {
     }
   };
 
-  const getAllAppointments = async () => {
+  const getAllAppointments = async (search) => {
     try {
-  const { data } = await fetchAllAppointments();
+  const { data } = await fetchAllAppointments(search);
 
       if (data.success) {
         setAppointments(data.appointments);
@@ -93,6 +97,49 @@ const AdminContextProvider = (props) => {
     }
   };
 
+  // Users Management
+  const getAllUsers = async () => {
+    try {
+      const { data } = await apiListUsers();
+      if (data.success) {
+        setUsers(data.users);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const removeUser = async (userId) => {
+    try {
+      const { data } = await apiDeleteUser(userId);
+      if (data.success) {
+        toast.success(data.message);
+        getAllUsers();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  // Doctors Management
+  const removeDoctor = async (doctorId) => {
+    try {
+      const { data } = await apiDeleteDoctor(doctorId);
+      if (data.success) {
+        toast.success(data.message);
+        getAllDoctors();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   const value = {
     aToken,
     setAToken,
@@ -102,10 +149,16 @@ const AdminContextProvider = (props) => {
     changeAvailability,
     appointments,
     setAppointments,
-    getAllAppointments,
+  getAllAppointments,
     cancelAppointment,
     dashData,
     getDashData,
+    // Users
+    users,
+    getAllUsers,
+    removeUser,
+    // Doctors delete
+    removeDoctor,
   };
 
   return (

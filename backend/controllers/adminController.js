@@ -6,6 +6,24 @@ import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
 import userModel from "../models/userModel.js";
 
+// Format a human-friendly display name from profile or email
+const formatDisplayName = (raw) => {
+  if (!raw || typeof raw !== "string") return raw;
+  let s = raw.trim();
+  // Replace separators with spaces
+  s = s.replace(/[._-]+/g, " ");
+  // Add spaces between camelCase boundaries
+  s = s.replace(/([a-z])([A-Z])/g, "$1 $2");
+  // Collapse spaces
+  s = s.replace(/\s+/g, " ");
+  // Title case each word
+  s = s
+    .split(" ")
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+    .join(" ");
+  return s;
+};
+
 // API for adding doctor
 const addDoctor = async (req, res) => {
   try {
@@ -118,7 +136,44 @@ const allDoctors = async (req, res) => {
 // API to get all appointments list
 const appointmentsAdmin = async (req, res) => {
   try {
-    const appointments = await appointmentModel.find({});
+    const { search } = req.query;
+    let appointments = await appointmentModel.find({}).lean();
+
+    // Refresh embedded userData with latest profile info
+    const userIds = [...new Set(appointments.map((a) => a.userId))];
+    if (userIds.length) {
+      const users = await userModel
+        .find({ _id: { $in: userIds } })
+        .select("name email image dob")
+        .lean();
+      const uMap = new Map(users.map((u) => [String(u._id), u]));
+      appointments = appointments.map((a) => {
+        const u = uMap.get(String(a.userId));
+        if (u) {
+          const prev = a.userData || {};
+          const emailName = (u.email && String(u.email).split('@')[0]) || '';
+          const profileName = (u.name && String(u.name).trim()) || undefined;
+          a.userData = {
+            ...prev,
+            // Exact as profile: use profile name verbatim if present; else keep previous; else derive from email
+            name: profileName ?? ((prev.name && String(prev.name).trim()) || (emailName && emailName.trim()) || prev.name),
+            email: (u.email && String(u.email).trim()) || prev.email,
+            image: (u.image && String(u.image).trim()) || prev.image,
+            dob: u.dob || prev.dob,
+          };
+        }
+        return a;
+      });
+    }
+
+    if (search && String(search).trim()) {
+      const s = String(search).trim().toLowerCase();
+      appointments = appointments.filter((a) => {
+        const name = (a.userData?.name || "").toLowerCase();
+        const email = (a.userData?.email || "").toLowerCase();
+        return name.includes(s) || email.includes(s);
+      });
+    }
     res.json({ success: true, appointments });
   } catch (error) {
     res.json({ success: false, message: error.message });
@@ -177,6 +232,47 @@ const adminDashboard = async (req, res) => {
   }
 };
 
+// API to list all users (patients) for admin panel
+const listUsers = async (req, res) => {
+  try {
+    const users = await userModel.find({}).select("-password");
+    res.json({ success: true, users });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API to delete a user (and optionally their appointments)
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await userModel.findByIdAndDelete(id);
+    if (!user) return res.json({ success: false, message: "User not found" });
+
+    // Clean up user's appointments
+    await appointmentModel.deleteMany({ userId: id });
+
+    res.json({ success: true, message: "User deleted" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API to delete a doctor and their related appointments
+const deleteDoctor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const doc = await doctorModel.findByIdAndDelete(id);
+    if (!doc) return res.json({ success: false, message: "Doctor not found" });
+
+    await appointmentModel.deleteMany({ docId: id });
+
+    res.json({ success: true, message: "Doctor deleted" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   addDoctor,
   loginAdmin,
@@ -184,4 +280,7 @@ export {
   appointmentsAdmin,
   appointmentCancel,
   adminDashboard,
+  listUsers,
+  deleteUser,
+  deleteDoctor,
 };

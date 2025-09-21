@@ -38,15 +38,32 @@ const AppContextProvider = ({ children }) => {
 
   const loadUserProfileData = async () => {
     try {
-  const { data } = await getUserProfile();
+      setLoading(true);
+      setError(null);
+      const { data } = await getUserProfile();
       if (data.success) {
-        setUserData(data.user);
+        // Ensure minimal shape to avoid undefined access in UI
+        const safeUser = {
+          address: { line1: '', line2: '', ...(data.user?.address || {}) },
+          phone: '',
+          gender: '',
+          dob: '',
+          image: '',
+          name: '',
+          email: '',
+          ...(data.profile || {}),
+        };
+        setUserData(safeUser);
       } else {
         toast.error(data.message);
+        setError(data.message || 'Failed to load profile');
       }
     } catch (error) {
       console.log(error);
       toast.error(error.message);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 

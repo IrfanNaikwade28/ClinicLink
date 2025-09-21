@@ -4,7 +4,7 @@ import {
   completeDoctorAppointment,
   cancelDoctorAppointment,
   fetchDoctorDashboard,
-  fetchDoctorProfile,
+  fetchProfile,
 } from "../api/doctor";
 import PropTypes from "prop-types";
 import { toast } from "react-toastify";
@@ -21,9 +21,9 @@ const DoctorContextProvider = (props) => {
   const [dashData, setDashData] = useState(false);
   const [profileData, setProfileData] = useState(false);
 
-  const getAppointments = async () => {
+  const getAppointments = async (search) => {
     try {
-  const { data } = await fetchDoctorAppointments();
+  const { data } = await fetchDoctorAppointments(search);
       if (data.success) {
         setAppointments(data.appointments);
         console.log(data.appointments);
@@ -86,10 +86,10 @@ const DoctorContextProvider = (props) => {
 
   const getProfileData = async () => {
     try {
-  const { data } = await fetchDoctorProfile();
+  const { data } = await fetchProfile();
       if (data.success) {
-        setProfileData(data.profileData);
-        console.log(data.profileData);
+        setProfileData(data.profile);
+        console.log(data.profile);
       }
     } catch (error) {
       console.log(error);
