@@ -2,6 +2,9 @@
 
 A comprehensive healthcare management system that connects patients, doctors, and administrators through a seamless digital platform.
 
+## Demo Video
+
+
 ## 🌟 Overview
 
 ClinicLink is a full-stack medical appointment and health record management system built with modern web technologies. It provides three distinct interfaces:
