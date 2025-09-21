@@ -5,6 +5,7 @@ import doctorModel from "../models/doctorModel.js";
 import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
 import userModel from "../models/userModel.js";
+import reportModel from "../models/reportModel.js";
 
 // Format a human-friendly display name from profile or email
 const formatDisplayName = (raw) => {
@@ -273,6 +274,21 @@ const deleteDoctor = async (req, res) => {
   }
 };
 
+// API for admin to fetch all reports
+const allReports = async (req, res) => {
+  try {
+    const reports = await reportModel
+      .find({})
+      .populate('doctorId', 'name speciality image')
+      .populate('patientId', 'name email phone dob')
+      .sort({ updatedAt: -1 });
+    
+    res.json({ success: true, reports });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   addDoctor,
   loginAdmin,
@@ -283,4 +299,5 @@ export {
   listUsers,
   deleteUser,
   deleteDoctor,
+  allReports,
 };

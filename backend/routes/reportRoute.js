@@ -5,6 +5,7 @@ import {
   updateReport,
   listReportsForPatient,
   getReportById,
+  getReportForEditing,
 } from "../controllers/reportController.js";
 
 const reportRouter = express.Router();
@@ -15,6 +16,7 @@ reportRouter.put("/reports/:id", authProfile, updateReport);
 
 // Fetch
 reportRouter.get("/reports/patient/:patientId", authProfile, listReportsForPatient);
+reportRouter.get("/reports/comprehensive/:patientId/:appointmentId", authProfile, getReportForEditing);
 reportRouter.get("/reports/:id", authProfile, getReportById);
 
 export default reportRouter;

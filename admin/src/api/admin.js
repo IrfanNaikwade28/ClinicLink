@@ -21,3 +21,7 @@ export const deleteUser = (userId) => api.delete(`/api/admin/users/${userId}`);
 
 // Delete Doctor
 export const deleteDoctor = (doctorId) => api.delete(`/api/admin/doctor/${doctorId}`);
+
+// Reports (Admin)
+export const fetchAllReports = () => api.get('/api/admin/reports');
+export const getReportById = (reportId) => api.get(`/api/reports/${reportId}`);

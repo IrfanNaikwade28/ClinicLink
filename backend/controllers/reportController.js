@@ -1,5 +1,7 @@
 import reportModel from "../models/reportModel.js";
 import appointmentModel from "../models/appointmentModel.js";
+import userModel from "../models/userModel.js";
+import doctorModel from "../models/doctorModel.js";
 
 // POST /api/reports (doctor only)
 const createReport = async (req, res) => {
@@ -69,6 +71,7 @@ const listReportsForPatient = async (req, res) => {
     const { patientId } = req.params;
     const reports = await reportModel
       .find({ patientId })
+      .populate('doctorId', 'name image speciality')
       .sort({ updatedAt: -1 });
     return res.json({ success: true, reports });
   } catch (error) {
@@ -76,16 +79,90 @@ const listReportsForPatient = async (req, res) => {
   }
 };
 
-// GET /api/reports/:id → fetch a specific report
+// GET /api/reports/:id → fetch a specific report with full context
 const getReportById = async (req, res) => {
   try {
     const { id } = req.params;
-    const report = await reportModel.findById(id);
+    const report = await reportModel.findById(id)
+      .populate('doctorId', 'name image speciality degree')
+      .populate('patientId', 'name email phone dob gender address')
+      .populate('appointmentId');
+    
     if (!report) return res.json({ success: false, message: "Report not found" });
-    return res.json({ success: true, report });
+    
+    // Get additional appointment details if populated
+    let appointmentData = null;
+    if (report.appointmentId) {
+      appointmentData = await appointmentModel.findById(report.appointmentId);
+    }
+    
+    return res.json({ 
+      success: true, 
+      report,
+      appointmentData,
+      patientData: report.patientId,
+      doctorData: report.doctorId
+    });
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
 };
 
-export { createReport, updateReport, listReportsForPatient, getReportById };
+// GET /api/reports/comprehensive/:patientId/:appointmentId → get report with full context for editing
+const getReportForEditing = async (req, res) => {
+  try {
+    const { patientId, appointmentId } = req.params;
+    const { profileRole, profileId } = req;
+    
+    // Get appointment data
+    const appointmentData = await appointmentModel.findById(appointmentId);
+    if (!appointmentData) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+    
+    // Get patient data
+    const patientData = await userModel.findById(patientId).select('-password');
+    if (!patientData) {
+      return res.json({ success: false, message: "Patient not found" });
+    }
+    
+    // Get doctor data
+    let doctorData = null;
+    if (profileRole === 'doctor') {
+      doctorData = await doctorModel.findById(profileId).select('-password');
+    }
+    
+    // Get all reports for this patient
+    const reports = await reportModel
+      .find({ patientId })
+      .populate('doctorId', 'name image speciality')
+      .sort({ updatedAt: -1 });
+    
+    // Find the editable report for this doctor/appointment
+    let editableReport = null;
+    if (profileRole === 'doctor') {
+      editableReport = reports.find(r => 
+        String(r.appointmentId) === String(appointmentId) && 
+        String(r.doctorId._id) === String(profileId)
+      );
+      
+      // If no appointment-specific report, find any by this doctor
+      if (!editableReport) {
+        editableReport = reports.find(r => String(r.doctorId._id) === String(profileId));
+      }
+    }
+    
+    return res.json({ 
+      success: true, 
+      appointmentData,
+      patientData,
+      doctorData,
+      reports,
+      editableReport
+    });
+  } catch (error) {
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+export { createReport, updateReport, listReportsForPatient, getReportById, getReportForEditing };

@@ -9,6 +9,7 @@ import {
   listUsers,
   deleteUser,
   deleteDoctor,
+  allReports,
 } from "../controllers/adminController.js";
 import upload from "../middlewares/multer.js";
 import authAdmin from "../middlewares/authAdmin.js";
@@ -28,5 +29,7 @@ adminRouter.get("/users", authAdmin, listUsers);
 adminRouter.delete("/users/:id", authAdmin, deleteUser);
 // Doctors management
 adminRouter.delete("/doctor/:id", authAdmin, deleteDoctor);
+// Reports management
+adminRouter.get("/reports", authAdmin, allReports);
 
 export default adminRouter;

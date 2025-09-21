@@ -26,3 +26,4 @@ export const adminDeleteDoctor = (id) => api.delete(`/api/doctors/${id}`);
 export const createReport = (payload) => api.post('/api/reports', payload);
 export const updateReport = (id, payload) => api.put(`/api/reports/${id}`, payload);
 export const listReportsForPatient = (patientId) => api.get(`/api/reports/patient/${patientId}`);
+export const getReportForEditing = (patientId, appointmentId) => api.get(`/api/reports/comprehensive/${patientId}/${appointmentId}`);
