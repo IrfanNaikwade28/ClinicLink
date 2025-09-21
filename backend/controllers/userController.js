@@ -88,7 +88,7 @@ const updateProfile = async (req, res) => {
     const { userId, name, phone, address, dob, gender } = req.body;
     const imageFile = req.file;
 
-    if (!name || !phone || !dob || !gender) {
+    if (!name || !phone || !dob) {
       return res.json({ success: false, message: "Data Missing" });
     }
 
@@ -97,7 +97,7 @@ const updateProfile = async (req, res) => {
       phone,
       address: JSON.parse(address),
       dob,
-      gender,
+      gender: gender || "", // Allow empty gender
     });
 
     if (imageFile) {

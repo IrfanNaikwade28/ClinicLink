@@ -95,7 +95,7 @@ npm run dev
 
 - **Patient Portal**: http://localhost:5173
 - **Admin/Doctor Panel**: http://localhost:5174  
-- **Backend API**: http://localhost:5000
+- **Backend API**: http://localhost:8000
 
 ## 📱 Features
 

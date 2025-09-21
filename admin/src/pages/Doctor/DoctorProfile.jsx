@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { DoctorContext } from "../../context/DoctorContext";
 import { AppContext } from "../../context/AppContext";
 import { fetchProfile as apiGetProfile, updateProfile as apiUpdateProfile } from "../../api/doctor";
+import { assets } from "../../assets/assets";
 import { toast } from "react-toastify";
 
 const DoctorProfile = () => {
@@ -10,9 +11,12 @@ const DoctorProfile = () => {
   const { currency } = useContext(AppContext);
 
   const [isEdit, setIsEdit] = useState(false);
+  const [image, setImage] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const updateProfile = async () => {
     try {
+      setLoading(true);
       const formData = new FormData();
 
       // Add only editable fields
@@ -21,11 +25,17 @@ const DoctorProfile = () => {
       formData.append("phone", profileData.phone || "");
       formData.append("available", profileData.available);
 
+      // Add image if selected
+      if (image) {
+        formData.append("image", image);
+      }
+
       const { data } = await apiUpdateProfile(formData, true); // true for multipart
 
       if (data.success) {
         toast.success(data.message);
         setIsEdit(false);
+        setImage(false);
         // Reload latest profile
         const resp = await apiGetProfile();
         if (resp.data?.success) setProfileData(resp.data.profile);
@@ -35,6 +45,8 @@ const DoctorProfile = () => {
     } catch (error) {
       toast.error(error.message);
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,14 +63,37 @@ const DoctorProfile = () => {
     profileData && (
       <div>
         <div className="flex flex-col gap-4 m-5">
-          {/* Profile Image Section (Read-only) */}
-          <div className="flex justify-center items-center size-60 rounded-full overflow-hidden bg-primary/5">
-            <img
-              className="w-full h-full object-cover"
-              src={profileData.image}
-              alt=""
-            />
-          </div>
+          {/* Profile Image Section (Editable) */}
+          {isEdit ? (
+            <label htmlFor="image" className="flex justify-center items-center cursor-pointer">
+              <div className="relative size-60 rounded-full overflow-hidden bg-primary/5">
+                <img
+                  className="w-full h-full object-cover opacity-75"
+                  src={image ? URL.createObjectURL(image) : profileData.image}
+                  alt=""
+                />
+                <img
+                  className="w-10 absolute bottom-3 right-3"
+                  src={image ? "" : assets.upload_area}
+                  alt=""
+                />
+              </div>
+              <input
+                onChange={(e) => setImage(e.target.files[0])}
+                type="file"
+                id="image"
+                hidden
+              />
+            </label>
+          ) : (
+            <div className="flex justify-center items-center size-60 rounded-full overflow-hidden bg-primary/5">
+              <img
+                className="w-full h-full object-cover"
+                src={profileData.image}
+                alt=""
+              />
+            </div>
+          )}
 
           <div className="flex-1 border border-stone-100 rounded-lg p-8 py-7 bg-white">
             {/* ------- Doc Info: name, degree, experience (Read-only) ------- */}
@@ -160,9 +195,17 @@ const DoctorProfile = () => {
             {isEdit ? (
               <button
                 onClick={updateProfile}
-                className="px-4 py-1 border border-primary text-sm rounded-full mt-5 hover:bg-primary hover:text-white transition-all"
+                disabled={loading}
+                className={`px-4 py-1 border border-primary text-sm rounded-full mt-5 hover:bg-primary hover:text-white transition-all ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Save
+                {loading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></div>
+                    Saving...
+                  </span>
+                ) : (
+                  'Save'
+                )}
               </button>
             ) : (
               <button

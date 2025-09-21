@@ -10,6 +10,7 @@ const MyProfile = () => {
 
   const [isEdit, setIsEdit] = useState(false);
   const [image, setImage] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Ensure profile is loaded when visiting page directly via URL
@@ -20,6 +21,7 @@ const MyProfile = () => {
 
   const updateUserProfileData = async () => {
     try {
+      setLoading(true);
       const formData = new FormData();
 
       formData.append("name", userData.name);
@@ -43,6 +45,8 @@ const MyProfile = () => {
     } catch (error) {
       console.log(error);
       toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -178,11 +182,12 @@ const MyProfile = () => {
                 }
                 value={userData.gender}
               >
+                <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
               </select>
             ) : (
-              <p className="text-gray-400">{userData.gender}</p>
+              <p className="text-gray-400">{userData.gender || "Not specified"}</p>
             )}
             <p className="font-medium">Birthday:</p>
             {isEdit ? (
@@ -203,10 +208,18 @@ const MyProfile = () => {
         <div className="mt-10">
           {isEdit ? (
             <button
-              className="border border-primary px-8 py-2 rounded-full hover:bg-primary hover:text-white transition-all"
+              className={`border border-primary px-8 py-2 rounded-full hover:bg-primary hover:text-white transition-all ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               onClick={updateUserProfileData}
+              disabled={loading}
             >
-              Save information
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></div>
+                  Saving...
+                </span>
+              ) : (
+                'Save information'
+              )}
             </button>
           ) : (
             <button
